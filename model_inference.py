@@ -1,8 +1,10 @@
 import joblib
-import librosa
+import numpy as np
 from extraction import extract_features, feature_names
 from sklearn.preprocessing import StandardScaler
 from collections import Counter
+from multiprocessing.pool import ThreadPool
+import multiprocessing as mp
 
 # Charger le pipeline
 LOG_MODEL_PATH = 'output/log_clf_wl.joblib'
@@ -29,16 +31,17 @@ def predict(y, sr, labels=False, use_model='log'):
 
 def split(y, sr):
     thirty_sec = 30 * sr
-    n_chunks = len(y) // (thirty_sec) + 1
-    return [y[thirty_sec*i: thirty_sec*(i+1)] 
-            for i in range(n_chunks)
-            if len(y[thirty_sec*i: thirty_sec*(i+1)]) > thirty_sec//2]
+    return [y[i: i+thirty_sec] 
+            for i in range(0, len(y), thirty_sec)
+            if len(y[i: i+thirty_sec]) > thirty_sec//2]
 
 def predict_genre(y, sr, *, use_model='log'):
     # splitter y
     ys = split(y, sr)
-    # faire les prédictions
-    predictions = [predict(x, sr, use_model=use_model) for x in ys]
+    # faire les prédictions en parallélisant l'analyse des segments 
+    with ThreadPool(mp.cpu_count()) as pool:
+        predictions = pool.starmap(predict, [(y, sr, False, use_model) for y in ys])
+    # predictions = [predict(x, sr, use_model=use_model) for x in ys]
     # sélectionner la classe prépondérante
     counter = Counter(predictions)
     return counter.most_common(1)[0][0], predictions

@@ -1,9 +1,9 @@
 import streamlit as st
 import librosa
-import json
 import librosa.display
 import numpy as np
 import matplotlib.pyplot as plt
+from datetime import datetime
 from model_inference import predict_genre, predict
 
 
@@ -31,18 +31,30 @@ def display_spectogram(y):
     st.pyplot(fig)
     
 @st.cache_data
-def make_prediction(y, chosen_model):
-    # Modèle choisi
-    use_model = ('log' if chosen_model=='LogisticRegression' else 'svc')
-    # Prédire le genre
+def make_prediction(y, chosen_model, prediction_type='deep'):
+    # Sélection du modèle à utiliser
+    use_model = 'log' if chosen_model == 'LogisticRegression' else 'svc'
+    # Suppression des silences au début et à la fin
     y_trimmed, _ = librosa.effects.trim(y)
-    return predict_genre(y_trimmed, sr, use_model=use_model), predict(y_trimmed, sr, use_model=use_model)
+    start = datetime.now()
+    if prediction_type == 'global':
+        # Prédiction rapide : une seule prédiction globale
+        genre = predict(y_trimmed, sr, use_model=use_model)
+        output = (genre, [genre])
+    else:
+        # Prédiction approfondie : analyse des segments
+        output = predict_genre(y_trimmed, sr, use_model=use_model)
+    st.write(f"Temps écoulé: {(datetime.now() - start).total_seconds():.0f} secondes")
+    return output
 
 
 
-
+# Ballons pour l'accueil
+if not 'balloons' in st.session_state:
+    st.balloons()
+    st.session_state.balloons = True
+    
 # Titre de l'application
-st.balloons()
 st.markdown("""
     <style>
     .main-title {
@@ -65,9 +77,22 @@ st.markdown("""
 
 # La SideBar
 chosen_model = st.sidebar.selectbox("Choisir un modèle pour la prédiction", options=['LogisticRegression', 'LinearSVC'])
+prediction_type = st.sidebar.radio(
+    "Type de prédiction",
+    options=['samples', 'global'],
+    index=0,
+    format_func=lambda x: "Prédictions globales" if x == 'global' else "Prédictions par échantillonage",
+)
+with st.sidebar.expander("A propos du type de prédictions"):
+    st.write(
+        "Choisissez _:blue[Prédictions par échantillonage]_ pour un traitement détaillé, segment par segment,"
+        "ou _:red[Prédictions globales]_ pour une analyse globale de l'audio.\n"
+        "Les prédictions par segmentation prennent moins de temps."
+    )
+
 
 # Téléchargement du fichier audio
-uploaded_file = st.file_uploader("Upload un fichier audio pour prédiction (minimum 30 secondes):", type=["wav", "mp3"])
+uploaded_file = st.file_uploader("Upload un fichier audio pour prédiction (minimum 30 secondes):", type=["wav", "mp3", "ogg", "flac", "aac", "aiff"])
 
 if uploaded_file is not None:
     try:
@@ -86,7 +111,7 @@ if uploaded_file is not None:
         display_spectogram(y)
 
         with st.spinner("Analyse du caractéristiques de l'audio"):
-            (predicted_genre, predictions), global_pred = make_prediction(y, chosen_model)
+            predicted_genre, predictions = make_prediction(y, chosen_model, prediction_type)
                     
             # Résultat
             st.markdown(f"""
@@ -98,7 +123,6 @@ if uploaded_file is not None:
             
             
         # Info sur les prédictions des modèles
-        st.info(f"De manière globale, cet audio est proche du {global_pred}")
         st.info("Les genres prédictibles sont: *blues, classical, country, disco, hiphop, jazz, metal, pop, reggae, rock* avec une confiance de 75%.")
         st.info("Les résultats peuvent varier selon le modèle utlisé. Ayez aussi en tête qu'une même chanson peut inclure plusieurs genres.")
         st.markdown(f"Le modèle utilisé est **:blue[{chosen_model}]**.")

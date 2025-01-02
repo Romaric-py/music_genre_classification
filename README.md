@@ -5,7 +5,7 @@ Ce projet utilise des techniques de machine learning pour classifier des fichier
 
 ## 🛠 Prérequis
 
-Le projet utilise Python 3.12.3 et les bibliothèques suivantes :
+Le projet utilise Python 3.12.4 et les bibliothèques suivantes :
 
 - **Streamlit** pour l'interface utilisateur.
 - **Librosa** pour le traitement audio.
