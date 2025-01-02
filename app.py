@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 from model_inference import predict_genre, predict
+import models_performance
 
 
 # Fonctions
@@ -116,7 +117,7 @@ if uploaded_file is not None:
             # Résultat
             st.markdown(f"""
             <div style="text-align: center; padding: 20px; border-radius: 10px; background: linear-gradient(45deg, #1e3c72, #2a5298); color: white; margin: 1rem 0;">
-                <h2>🎤 Genre Prédit :</h2>
+                <h3>🎤 Genre Prédit :</h3>
                 <h1 style="font-size: 3rem;"> {predicted_genre}</h1>
             </div>
             """, unsafe_allow_html=True)
@@ -140,6 +141,10 @@ if uploaded_file is not None:
         st.error(f"Un erreur est survenue")
         with st.expander("Plus de détails"):
             st.markdown(f'\n{e}')
+
+# Performance des modèles
+with st.expander("Voir plus de détails sur la performace des modèles à prédire les genres musicaux"):
+    models_performance.run()
 
 # Note de bas de page
 st.markdown("""

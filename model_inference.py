@@ -1,14 +1,18 @@
 import joblib
+import warnings
 import numpy as np
+import multiprocessing as mp
 from extraction import extract_features, feature_names
 from sklearn.preprocessing import StandardScaler
 from collections import Counter
 from multiprocessing.pool import ThreadPool
-import multiprocessing as mp
+
+warnings.filterwarnings('ignore', category=UserWarning)
+
 
 # Charger le pipeline
-LOG_MODEL_PATH = 'output/log_clf_wl.joblib'
-SVC_MODEL_PATH = "output/linSVC_wl.joblib"
+LOG_MODEL_PATH = 'output/log_clf_wl_full.joblib'
+SVC_MODEL_PATH = "output/linSVC_wl_full.joblib"
 LABEL_ENCODER_PATH = 'output/label_encoder.joblib'
 
 model_log = joblib.load(LOG_MODEL_PATH)
